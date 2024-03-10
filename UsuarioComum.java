@@ -1,9 +1,11 @@
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-public class UsuarioComum extends Usuario {
+public final class UsuarioComum extends Usuario implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
 	private Map<String, String> palavrasPasse;
 
 	public UsuarioComum(String login, String senha, Map<String, String> palavrasPasse) {
@@ -47,9 +49,7 @@ public class UsuarioComum extends Usuario {
 
 	@Override
 	public String toString() {
-		return "UsuarioComum%palavrasPasse=" + palavrasPasse + "/" + super.toString();
+		return "UsuarioComum palavrasPasse=" + palavrasPasse + "/" + super.toString();
 	}
-	
-	
-	
+		
 }

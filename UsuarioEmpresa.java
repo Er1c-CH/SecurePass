@@ -1,7 +1,9 @@
+import java.io.Serializable;
 import java.util.List;
 
-public class UsuarioEmpresa extends Usuario {
+public final class UsuarioEmpresa extends Usuario implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
 	private String empresa;
 	
 	public UsuarioEmpresa(String login, String senha, String empresa) {
@@ -24,8 +26,7 @@ public class UsuarioEmpresa extends Usuario {
 
 	@Override
 	public String toString() {
-		return "UsuarioEmpresa%empresa=" + empresa + "/" + super.toString();
+		return "UsuarioEmpresa empresa=" + empresa + "/" + super.toString();
 	}
 	
-
 }

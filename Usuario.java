@@ -1,8 +1,11 @@
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class Usuario {
+public abstract class Usuario implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
 	private String login;
 	private String senha;
 	private List<Conta> contas;
@@ -16,6 +19,7 @@ public abstract class Usuario {
 	public Usuario(String login, String senha) {
 		this.login = login;
 		this.senha = senha;
+		this.contas = new ArrayList<>();
 	}
 
 	public String getLogin() {
@@ -38,12 +42,8 @@ public abstract class Usuario {
 		return contas;
 	}
 
-	public void setContas(Conta conta) {
+	public void setConta(Conta conta) {
 		this.contas.add(conta);
-	}
-	
-	public void setContas(List<Conta> conta) {
-		this.contas = conta;
 	}
 
 	@Override

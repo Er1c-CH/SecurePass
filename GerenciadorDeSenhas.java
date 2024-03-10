@@ -1,17 +1,20 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 public class GerenciadorDeSenhas {
 	
+	private Scanner sc;
 	private List<Usuario> usuarios;
 	
 	private void criarArquivo(File file) {
@@ -23,67 +26,52 @@ public class GerenciadorDeSenhas {
 		}
 	}
 	
-	private void lerArquivo(File file) {
-		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-			String linha;
-			while ((linha = reader.readLine()) != null) {
-				String[] classe = linha.split("%");
-				Map<String, String> userMap = new HashMap<>();
-				List<Conta> contas = new ArrayList<>();
-				
-				if(classe[0].equals("UsuarioComum")) {
-					Map<String, String> palavrasPasse = new HashMap<>();
-					for(String campo : classe[1].split("/")) {
-						userMap.put(campo.split("=", 2)[0], campo.split("=", 2)[1]);
-					}
-					for(String palavraPasse : userMap.get("palavrasPasse").replace("{", "").replace("}", "").split(", ")) {
-						palavrasPasse.put(palavraPasse.split("=")[0], palavraPasse.split("=")[1]);
-					}
-					for(String conta : userMap.get("contas").replace("[", "").replace("]", "").split(", ")) {
-						contas.add(new Conta(conta.split("$")[0].split("=")[1], conta.split("$")[1].split("=")[1], conta.split("$")[2].split("=")[1]));
-					}
-					this.usuarios.add(new UsuarioComum(userMap.get("login"), userMap.get("senha"), palavrasPasse, contas));
-				} else {	
-					for(String campo : classe[1].split("/")) {
-						userMap.put(campo.split("=", 2)[0], campo.split("=", 2)[1]);
-					}
-					for(String conta : userMap.get("contas").replace("[", "").replace("]", "").split(", ")) {
-						contas.add(new Conta(conta.split("$")[0].split("=")[1], conta.split("$")[1].split("=")[1], conta.split("$")[2].split("=")[1]));
-					}
-					this.usuarios.add(new UsuarioEmpresa(userMap.get("empresa"), userMap.get("login"), userMap.get("senha"), contas));	
-				}
-			}
+	@SuppressWarnings("unchecked")
+	private void lerArquivo() {
+		FileInputStream fis;
+		try {
+			
+			fis = new FileInputStream("Usuarios.tmp");
+			ObjectInputStream ois = new ObjectInputStream(fis);
+			this.usuarios = (List<Usuario>) ois.readObject();
+			ois.close();
+			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
 		}
 	}
 	
-	public void salvarArquivo(File file) {
-		try(BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-			for(Usuario user : this.usuarios) {
-				writer.write(user.toString());
-				writer.newLine();
-			}
-		}catch (FileNotFoundException e) {
+	public void salvarArquivo() {
+		FileOutputStream fos;	
+		try {
+			
+			fos = new FileOutputStream("Usuarios.tmp");
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			oos.writeObject(this.usuarios);
+			oos.close();
+			
+		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		}	
 	}
 	
 	public GerenciadorDeSenhas() {
 		
-		File file = new File("usuarios.txt");
+		File file = new File("Usuarios.tmp");
+		this.sc = new Scanner(System.in);
 		this.usuarios = new ArrayList<Usuario>();
 		
 		if(file.exists()) {
-			lerArquivo(file);
+			lerArquivo();
 		} else {
 			criarArquivo(file);
-		}
-		
+		}		
 	}
 
 	public List<Usuario> getUsuarios() {
@@ -128,5 +116,194 @@ public class GerenciadorDeSenhas {
 		
 		this.usuarios.add(user);
 	}
+	
+	public void iniciar() {
+		this.telaInicial();
+	}
+	
+	private void telaInicial() {
+		System.out.print(
+				"\nBem-vindo ao Secure Pass!\n\n" +
+				"1) Fazer login\n" +
+				"2) Fazer cadastro\n" +
+				"3) Esqueci a senha\n" +
+				"4) Finalizar\n\n" +
+				"Entrada: "			
+		);
+		
+		String decisao = this.sc.nextLine();
 
+		switch (decisao) {
+		case "1":
+			this.telaLogin();
+		case "2":
+			this.telaCadastro();
+		case "3":
+			this.esqueciASenha();
+		case "4":
+			System.out.println("Finalizando programa.");
+			this.salvarArquivo();
+			System.exit(0);
+		default:
+			this.telaInicial();
+		}
+		
+	}
+	
+	private void telaLogin() {
+		System.out.println("Fazendo login no Secure Pass.");
+		System.out.print("E-mail: ");
+		String email = sc.nextLine();
+		System.out.print("Senha: ");
+		String senha = sc.nextLine();
+		
+		try {
+			Usuario user = entrar(email, senha);
+			this.telaPrincipal(user);
+		} catch(Exception e) {
+			System.out.println(e.getMessage());
+			this.telaInicial();
+		}
+	}
+	
+	private void telaCadastro() {
+		System.out.println("Fazendo cadastro no Secure Pass.");
+		System.out.println("1) Usuario comum\n2) Usuario de empresa\n");
+		System.out.print("Entrada: ");
+		String decisao = sc.nextLine();
+		
+		switch (decisao) {
+		case "1":
+			this.telaCadastroComum();
+		case "2":
+			this.telaCadastroEmpresa();
+		default:
+			this.telaInicial();
+		}
+	}
+	
+	private void telaCadastroComum() {
+		System.out.print("E-mail: ");
+		String email = sc.nextLine();
+		System.out.print("Senha: ");
+		String senha = sc.nextLine();
+		System.out.println("Cadastrando chaves de segurança.");
+		Map<String, String> recuperacao = new HashMap<>();
+		while (true) {
+			System.out.print("Chave: ");
+			String chave = sc.nextLine();
+			System.out.print("Valor: ");
+			String valor = sc.nextLine();
+			recuperacao.put(chave, valor);
+			System.out.println("1) para continuar cadastrando chaves.");
+			String decisao = sc.nextLine();
+			if(!decisao.equals("1"))
+				break;
+		}
+		try {
+			this.cadastrarUsuarioComum(email, senha, recuperacao);
+			this.telaInicial();
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+			this.telaInicial();
+		}
+	}
+	
+	private void telaCadastroEmpresa() {
+		System.out.print("Empresa: ");
+		String empresa = sc.nextLine();
+		System.out.print("E-mail: ");
+		String email = sc.nextLine();
+		System.out.print("Senha: ");
+		String senha = sc.nextLine();
+		try {
+			this.cadastrarUsuarioEmpresa(empresa, email, senha);
+			this.telaInicial();
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+			this.telaInicial();
+		}
+	}
+	
+	private void esqueciASenha() {
+		System.out.println("Recuperação de senha.");
+		System.out.print("E-mail: ");
+		String email = sc.nextLine();
+		for(Usuario user : this.usuarios) {
+			if(user.getLogin().equals(email)) {
+				if(user instanceof UsuarioComum) {
+					UsuarioComum u = (UsuarioComum) user;
+					for(Map.Entry<String, String> entry : u.getPalavrasPasse().entrySet()) {
+						System.out.println("Chave: " + entry.getKey());
+						System.out.print("Valor: ");
+						String valor = sc.nextLine();
+						if(!entry.getValue().equals(valor)) {
+							System.out.println("Valor errado.");
+							this.telaInicial();
+						}
+					}
+					System.out.println("Verificação concluida.");
+					System.out.print("Nova senha: ");
+					String novaSenha = sc.nextLine();
+					user.setSenha(novaSenha);
+					this.telaInicial();
+				}
+			} else {
+				System.out.println("Usuarios de empresa não tem recuperação de senha, entre em contato com a empresa.");
+				this.telaInicial();
+			}
+		}		
+	}
+	
+	private void telaPrincipal(Usuario user) {
+		System.out.print(
+				"1) Visualizar contas cadastradas.\n"
+				 + "2) Cadastrar nova conta.\n"
+				 + "3) Deletar conta.\n"
+				 + "4) Sair.\n\n"
+				 + "Entrada: "
+		);
+		
+		String decisao = sc.nextLine();
+		
+		switch(decisao) {
+		case "1": {
+			System.out.println(user.getContas().toString());
+			this.telaPrincipal(user);
+		}
+		case "2": 
+			this.cadastrarNovaConta(user);
+		case "3":
+			this.deletarConta(user);
+		case "4":
+			this.telaInicial();
+		default:
+			this.telaPrincipal(user);
+			
+		}
+	}
+	
+	private void cadastrarNovaConta(Usuario user) {
+		System.out.print("Plataforma: ");
+		String plataforma = sc.nextLine();
+		System.out.print("Login: ");
+		String login = sc.nextLine();
+		System.out.print("Senha: ");
+		String senha = sc.nextLine();
+		System.out.print("Descrição: ");
+		String descricao = sc.nextLine();
+		user.setConta(new Conta(plataforma, login, senha, descricao));
+		this.telaPrincipal(user);
+	}
+	
+	private void deletarConta(Usuario user) {
+		System.out.print("Plataforma: ");
+		String plataforma = sc.nextLine();
+		for(Conta c : user.getContas()) {
+			if(c.getPlataforma().equals(plataforma)) {
+				user.getContas().remove(c);
+			}
+		}
+		this.telaPrincipal(user);
+	}
 }

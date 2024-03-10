@@ -1,6 +1,8 @@
+import java.io.Serializable;
 
-public class Conta {
+public final class Conta implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
 	private String plataforma;
 	private String email;
 	private String password;
@@ -10,14 +12,14 @@ public class Conta {
 		this.plataforma = plataforma;
 		this.email = email;
 		this.password = password;
-		this.descricao = descricao.replace(" ", "_");
+		this.descricao = descricao;
 	}
 	
 	public Conta(String plataforma, String email, String password) {
 		this.plataforma = plataforma;
 		this.email = email;
 		this.password = password;
-		this.descricao = "Não_há_descrição.";
+		this.descricao = "Não há descrição.";
 	}
 
 	public String getPlataforma() {
@@ -54,9 +56,7 @@ public class Conta {
 
 	@Override
 	public String toString() {
-		return "plataforma=" + plataforma + "$email=" + email + "$password=" + password + "$descricao=" + descricao;
+		return "Plataforma: " + plataforma + ", Login: " + email + ", Senha: " + password + ", Descrição: " + descricao;
 	}
-	
-	
 
 }
