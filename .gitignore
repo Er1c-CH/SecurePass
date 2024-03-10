@@ -1,2 +1,4 @@
 *.class
 *.tmp
+.classpath
+.project
